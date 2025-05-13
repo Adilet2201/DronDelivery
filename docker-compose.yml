@@ -1,9 +1,20 @@
+version: '3.8'
+
 services:
   db:
     image: postgres:15
     env_file: .env
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DATABASE_USER}", "-d", "${DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   minio:
     image: minio/minio:latest
@@ -22,8 +33,10 @@ services:
     build: .
     env_file: .env
     depends_on:
-      - db
-      - minio
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
     volumes:
       - .:/app
       - staticfiles:/app/staticfiles
@@ -31,7 +44,10 @@ services:
       - "8000:8000"
     command: >
       sh -c "
-        until pg_isready -h db -p 5432; do echo 'Waiting for Postgres…'; sleep 1; done &&
+        until pg_isready -h db -p 5432 -U ${DATABASE_USER} -d ${DATABASE_NAME}; do
+          echo 'Waiting for Postgres…';
+          sleep 1;
+        done &&
         python manage.py migrate &&
         python manage.py collectstatic --noinput &&
         gunicorn djangoProject3.wsgi:application --bind 0.0.0.0:8000 --workers 2
@@ -39,7 +55,8 @@ services:
 
   nginx:
     image: nginx:stable-alpine
-    depends_on: [web]
+    depends_on:
+      - web
     ports:
       - "80:80"
     volumes:
