@@ -24,6 +24,4 @@ typing_extensions==4.13.2
 tzdata==2025.2
 uritemplate==4.1.1
 
-# если подключаете celery (опционально)
-django-celery-beat
-django-celery-results
+
