@@ -27,5 +27,5 @@ Originally ported from a Flask prototype, now featuring:
 
 1. **Clone the repo**  
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/Adilet2201/DronDelivery
    cd DronProjectDjango
